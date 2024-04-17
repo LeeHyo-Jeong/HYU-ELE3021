@@ -42,7 +42,6 @@ struct proc {
   int isMoQ;
 
   struct proc* next; 	       // pointer to next process in the queue
-  struct proc* prev;	       // pointer to previous process in the queue
 
   uint sz;                     // Size of process memory (bytes)
   pde_t* pgdir;                // Page table

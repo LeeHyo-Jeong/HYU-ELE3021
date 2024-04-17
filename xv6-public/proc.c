@@ -134,15 +134,6 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
-
-/*
- if((p->pgdir = setupkvm()) == 0){
-    kfree(p->kstack);
-    p->kstack = 0;
-    p->state = UNUSED;
-    return 0;
-  }*/
-  
   p->queuelevel = -1;
   p->proctick = 0;
   p->priority = 0;
@@ -150,10 +141,6 @@ found:
   enqueue(p, 0);
   
   isMLFQ = 1;
- /* acquire(&ptable.lock);
-  p->state = RUNNABLE;
-  release(&ptable.lock);
-  */
   return p;
 }
 
@@ -554,9 +541,6 @@ void enqueue(struct proc* p, int level){
 		return;
 	}
 
-	// acquire lock
-	//acquire(&mlfq[level].lock);
-
 	// if the queue is empty
 	if(mlfq_empty(level)){
 		acquire(&mlfq[level].lock);
@@ -570,7 +554,6 @@ void enqueue(struct proc* p, int level){
 		acquire(&mlfq[level].lock);
 		// set the process p as the last process of the queue
 		mlfq[level].rear->next = p;
-		p->prev = mlfq[level].rear;
 		mlfq[level].rear = p;
 		release(&mlfq[level].lock);
 	}
@@ -582,28 +565,7 @@ void enqueue(struct proc* p, int level){
 	p->proctick = 0;
 
 
-	//p->state = RUNNABLE;
-
-	
 	p->priority = 0;
-
-	//release(&mlfq[level].lock);
-}
-
-// this function is for debugging
-void proc_print(){
-	struct proc* p;
-	for(int level = 0 ; level < 4 ; level++){
-		p = mlfq[level].front;
-		cprintf("[ L%d ] global tick: %d\n", level, ticks);
-		if(p == 0) cprintf(" empty queue\n");
-		while(p != 0){
-			cprintf(" %d | ", p->pid);
-			if(p->next == p) return;
-			p = p->next;
-		}
-	cprintf("\n");
-	}
 }
 
 void moq_dequeue(struct proc* p){
@@ -614,20 +576,28 @@ void moq_dequeue(struct proc* p){
 	
 	// if the process to be dequeued is front of MoQ
 	if(p == moq.front){
-                //acquire(&moq.lock);
+                acquire(&moq.lock);
                 moq.front = p->next;
+		
+		// if the queue is empty after dequeue operation
                 if(moq.front == 0) moq.rear = 0;
+
                 p->next = 0;
-                //release(&moq.lock);
+                release(&moq.lock);
 	}
 	else{
-		//acquire(&moq.lock);
+		acquire(&moq.lock);
+
+		// find previous process of p in MoQ
 		struct proc* find = moq.front;
 		while(find->next != p) find = find->next;
+
                 find->next = p->next;
+		
                 if(moq.rear == p) moq.rear = find;
-                p->next = 0;
-		//release(&moq.lock);
+                
+		p->next = 0;
+		release(&moq.lock);
 	}
 
 	p->isMoQ = 0;
@@ -635,6 +605,7 @@ void moq_dequeue(struct proc* p){
 
 
 void dequeue(struct proc* p, struct Queue* q){
+	// synchronization
 	if(p->queuelevel != q->level){
 		return;
 	}
@@ -645,7 +616,6 @@ void dequeue(struct proc* p, struct Queue* q){
 		return;
 	}
 
-	//acquire(&mlfq[level].lock);
 
 	if(mlfq_empty(level)){
 		cprintf("Empty queue\n");
@@ -674,50 +644,73 @@ void dequeue(struct proc* p, struct Queue* q){
 		p->next = 0;
 	}
 	p->queuelevel = -1;
-	//release(&mlfq[level].lock);
 }	
 
 void move(struct proc* p, int level){
-	/*cprintf(" [ %d -> %d ]\n", p->queuelevel, level);
-	cprintf("Before move\n");
-	proc_print();*/
 	dequeue(p, &mlfq[p->queuelevel]);
 	enqueue(p, level);
 	p->queuelevel = level;
-	/*cprintf("After move\n");
-	proc_print();*/
 }
 
 int mlfq_isrunnable(struct proc* p){
 	return (p != 0 && p->state == RUNNABLE);
 }
 
-void priority_boosting(void){
-	// if global tick equals to 100,
-	// move processes from L1~3 to L0
-	//cprintf("<---------priority boosting---------->\n");
-	struct proc* p;
+void moq_move(struct proc* p){
+        if(p == 0) return;
 
+        int level = p->queuelevel;
+
+        // dequeue the process from previous MLFQ
+        dequeue(p, &mlfq[level]);
+
+        acquire(&ptable.lock);
+
+        if(p->queuelevel != -1) return;
+
+        // enqueue the process in MoQ
+
+        // if MoQ is empty
+        if(moq.front == 0){
+                moq.front = p;
+                moq.rear = p;
+        }
+
+        // if MoQ is not empty
+        else{
+                moq.rear->next = p;
+                moq.rear = p;
+                p->next = 0;
+        }
+
+	// number of RUNNABLE process of MoQ increases
+        if(p->state == RUNNABLE) moq.size++;
+
+        release(&ptable.lock);
+
+        p->isMoQ = 1;
+        p->queuelevel = 99;
+}
+
+
+void priority_boosting(void){
+	// priority boosting is called when ticks >= 100 (implemented in trap.c)
+	struct proc* p;
 	
 	acquire(&ptable.lock);
 	
-	//cprintf("before boosting\n");
-	//proc_print();
 	for(p = ptable.proc ; p < &ptable.proc[NPROC] ; p++){
 		// move only MLFQ processes
 		if(p->isMoQ == 1) continue;
 
-		
+		// move all L1~L3 processes to L0
 		if(p->queuelevel == 1 || p->queuelevel == 2 || p->queuelevel == 3){
 			dequeue(p, &mlfq[p->queuelevel]);
 			enqueue(p, 0);
-		
-			//p->priority = 0;
+			
 			p->proctick = 0;
 		}
 	}
-	//cprintf("after boosting\n");
-	//proc_print();
 
 	release(&ptable.lock);
 	
@@ -725,8 +718,6 @@ void priority_boosting(void){
 	mlfq[1].front = 0;
 	mlfq[2].front = 0;
 	mlfq[3].front = 0;
-	
-	//ticks = 0;
 }
 
 int setpriority(int pid, int priority){
@@ -746,6 +737,59 @@ int setpriority(int pid, int priority){
         return -1;
 }
 
+int setmonopoly(int pid, int password){
+        if(password != 2022077510){
+                cprintf("Invalid password\n");
+                kill(pid);
+                return -2;
+        }
+
+        struct proc* p;
+
+        for(p = ptable.proc ; p < &ptable.proc[NPROC] ; p++){
+                if(p->pid == pid){
+                        // move the process from MLFQ to MoQ
+                        moq_move(p);
+                        p->isMoQ = 1;
+                        return moq.size;
+                }
+        }
+
+        return -1;
+}
+
+void monopolize(){
+        acquire(&monolock);
+        isMoQ = 1;
+        release(&monolock);
+
+        acquire(&mlfqlock);
+        isMLFQ = 0;
+        release(&mlfqlock);
+
+}
+
+void unmonopolize(){
+	acquire(&monolock);
+	isMoQ = 0;
+	release(&monolock);
+
+	acquire(&moq.lock);
+	struct proc* p;
+	for(p = moq.front ; p != 0 ; p = p->next){
+		if(p->state == ZOMBIE && p->isMoQ == 1){
+			moq_dequeue(p);
+		}
+	}
+	release(&moq.lock);
+
+	ticks = 0;
+
+	acquire(&mlfqlock);
+	isMLFQ = 1;
+	release(&mlfqlock);
+}
+
 #ifdef MLFQ
 void scheduler(void){
 	struct proc* p = 0;
@@ -753,29 +797,21 @@ void scheduler(void){
 	// there is no process which is using this cpu
 	c->proc = 0;
 
-	// set up time quantum for each queue
+	// set up time quantum and level for each queue
 	for(int i = 0 ; i < 4 ; i++){
-		//cprintf("timequantum\n");
 		mlfq[i].tq = 2 * i + 2;
 		mlfq[i].level = i;
 	}
 
 	for(;;){
 		// check if monopolize called
+		// if monopolize called, execute MoQ scheduler
 		if(isMoQ == 1 && isMLFQ == 0) {
-			//acquire(&monolock);
-			//cprintf("MoQ scheduler executed\n");
-			// implement locks
-			//acquire(&ptable.lock);
-			// run until no ZOMBIE exist in MoQ
-        		//acquire(&moq.lock);
        			for(p = moq.front ; p != 0 ; p = p->next){
                 		if(p->state != RUNNABLE) continue;
         			
-				//cprintf("Processing in MoQ..\n");
-		
                 		// run the process in MoQ
-
+				// to switch context, acquire ptable lock
 				acquire(&ptable.lock);
                 		c->proc = p;
                 		switchuvm(p);
@@ -785,31 +821,20 @@ void scheduler(void){
 				release(&ptable.lock);
 
                 		c->proc = 0;
-		
-				//cprintf("Process in MoQ executed\n");
 
 				if(p->state == ZOMBIE){
-					//cprintf("Delete zombie in MoQ\n");
 					moq_dequeue(p);
 				}
 				
+				// if MoQ is empty, call unmonopolize
 				if(moq.front == 0){
 					unmonopolize();
 				}
         		}
-	
-/*
-			// if there is no process in MoQ, unmonopolize				
-			if(moq.front == 0){
-				//release(&moq.lock);
-				unmonopolize();
-			}
-*/	
-			//release(&monolock);
-			//release(&moq.lock);
-			//release(&ptable.lock);
 		}
-		// MLFQ scheduler
+
+		// if monopolize not called
+		// execute MLFQ scheduler
 		else if(isMLFQ == 1 && isMoQ == 0){
 			sti();
 			
@@ -831,7 +856,6 @@ void scheduler(void){
 							
                         	        // if the process end up its job during time quantum
                         	        if(p->state == ZOMBIE){
-						//cprintf("ZOMBIE\n");
                         	                dequeue(p, &mlfq[level]);
                         	        }
 
@@ -841,21 +865,17 @@ void scheduler(void){
                         	        	// and it has even pid
 						if(p->queuelevel == 0 && p->proctick >= mlfq[0].tq){ 
 							if(p->pid % 2 == 0){
-								//cprintf("move even\n");
 								move(p, 2);
 							}
                                 			// it has odd pid
                                 			else if(p->pid % 2 != 0){
-								//cprintf("move odd\n");
 							 	move(p, 1);
 							}
 						}	
 						else if(p->queuelevel == 1 && p->proctick >= mlfq[1].tq){
-							//cprintf("move to L3\n");
 							move(p, 3);
 						}
 						else if(p->queuelevel == 2 && p->proctick >= mlfq[2].tq){
-							//cprintf("move to L3\n");
 							move(p, 3);
 						}
                         		}
@@ -864,13 +884,12 @@ void scheduler(void){
 
 			// L3
 			if(mlfq[3].front != 0 && mlfq[1].front == 0 && mlfq[2].front == 0){
-				//acquire(&mlfq[3].lock);
-	
 				struct proc* max = mlfq[3].front;
 				struct proc* find = 0;
 				
 				int max_priority = max->priority;
 
+				// find a process that has maximum priority in L3
 				for(find = mlfq[3].front ; find != 0 ; find = find->next){
 					if(find->state != RUNNABLE) continue;
 					if(find->priority > max_priority){
@@ -910,8 +929,6 @@ void scheduler(void){
 		}
 	}
 }
-
-// moq schudeluer need to be implemented here
 
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -957,106 +974,21 @@ scheduler(void)
 
     }
 }
-
 #endif
 
-int setmonopoly(int pid, int password){
-	if(password != 2022077510){
-		cprintf("Invalid password\n");
-		kill(pid);
-		return -2;
-	}
-
-	struct proc* p;
-	
-	//acquire(&ptable.lock);
-	for(p = ptable.proc ; p < &ptable.proc[NPROC] ; p++){
-		if(p->pid == pid){
-			// move the process from MLFQ to MoQ
-			moq_move(p);
-			p->isMoQ = 1;
-			return moq.size;
-		}
-	}
-
-	//cprintf("setmonopoly error\n");	
-	//release(&ptable.lock);	
-	
-	return -1;
-}
-
-void monopolize(){
-	acquire(&monolock);
-	isMoQ = 1;
-	release(&monolock);
-
-	acquire(&mlfqlock);
-	isMLFQ = 0;
-	release(&mlfqlock);
-
-	//cprintf("monopolize ended\n");
-}
-
-void unmonopolize(){
-	// dequeue every ZOMBIE process in MoQ
-	acquire(&monolock);
-	isMoQ = 0;
-	release(&monolock);
-	
-	acquire(&moq.lock);
-	struct proc* p;
-	for(p = moq.front ; p != 0 ; p = p->next){
-		if(p->state == ZOMBIE && p->isMoQ == 1)
-			moq_dequeue(p);
-	}
-	release(&moq.lock);
-
-	ticks = 0;
-	
-	acquire(&mlfqlock);
-	isMLFQ = 1;
-	release(&mlfqlock);
-
-	//cprintf("unmopolize ended\n");
-}
-
-void moq_move(struct proc* p){
-        if(p == 0) return;
-
-        int level = p->queuelevel;
-
-        // dequeue the process from previous MLFQ
-        dequeue(p, &mlfq[level]);
-	
-	acquire(&ptable.lock);
-
-	if(p->queuelevel != -1) return;
-	// enqueue the process in MoQ
-        // if MoQ is empty
-        if(moq.front == 0){
-                moq.front = p;
-                moq.rear = p;
+// this function is for debugging
+void proc_print(){
+        struct proc* p;
+        for(int level = 0 ; level < 4 ; level++){
+                p = mlfq[level].front;
+                cprintf("[ L%d ] global tick: %d\n", level, ticks);
+                if(p == 0) cprintf(" empty queue\n");
+                while(p != 0){
+                        cprintf(" %d | ", p->pid);
+                        if(p->next == p) return;
+                        p = p->next;
+                }
+        cprintf("\n");
         }
-        
-        // if MoQ is not empty
-        else{
-                moq.rear->next = p;
-                moq.rear = p;
-		p->next = 0;
-        }
-	
-	if(p->state == RUNNABLE) moq.size++;
-
-	release(&ptable.lock);
-
-	p->isMoQ = 1;
-	p->queuelevel = 99;
-	//cprintf("moq_move ended\n");
-	//cprintf("processes in MoQ\n");
-	/*
-	for(struct proc* q = moq.front ; q != 0 ; q = q->next)
-		cprintf("%d | ", q->pid);
-	cprintf("\n");
-	*/
 }
 
