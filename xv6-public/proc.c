@@ -536,7 +536,7 @@ void enqueue(struct proc* p, int level){
 		return;
 	}
 		
-	if(level < 0 || level > 4){
+	if(level < 0 || level > 3){
 		cprintf("out of level range\n");
 		return;
 	}
@@ -611,7 +611,7 @@ void dequeue(struct proc* p, struct Queue* q){
 	}
 
 	int level = p->queuelevel;
-	if(level < 0 || level > 4){
+	if(level < 0 || level > 3){
 		cprintf("out of level range\n");
 		return;
 	}
