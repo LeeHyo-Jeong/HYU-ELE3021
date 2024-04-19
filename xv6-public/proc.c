@@ -790,7 +790,7 @@ void unmonopolize(){
 	release(&mlfqlock);
 }
 
-#ifdef MLFQ
+#ifdef MLFQ_MOQ
 void scheduler(void){
 	struct proc* p = 0;
 	struct cpu* c = mycpu();

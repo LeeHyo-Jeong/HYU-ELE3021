@@ -1,4 +1,4 @@
-cscope 15 $HOME/xv6-public               0000406063
+cscope 15 $HOME/xv6-public               0000406062
 	@asm.h
 
 5 
@@ -20718,7 +20718,7 @@ queu–ev–
 
 539 if(
 Ëv–
- < 0 ||†evel > 4){
+ < 0 ||†evel > 3){
 
 540 
 	`ýrštf
@@ -21008,7 +21008,7 @@ queu–ev–
 
 614 if(
 Ëv–
- < 0 ||†evel > 4){
+ < 0 ||†evel > 3){
 
 615 
 	`ýrštf
@@ -29040,109 +29040,109 @@ IRQ_TIMER
 	`ýuid
 () == 0){
 
-63 
+62 
 	`acquœe
 (&
 tick¦ock
 );
 
-64 
+63 
 ticks
 ++;
 
-65 if(
+64 if(
 isMoQ
  =ð0 && 
 ticks
  >= 100){
 
-66 
+65 
 	`´iÜ™y_boo¡šg
 ();
 
-67 
+66 
 ticks
  = 0;
 
-70 
+68 
 	`wakeup
 (&
 ticks
 );
 
-71 
+69 
 	`»Ëa£
 (&
 tick¦ock
 );
 
-73 
+71 
 	`Ïpiûoi
 ();
 
-75 
+73 
 T_IRQ0
  + 
 IRQ_IDE
 :
 
-76 
+74 
 	`idešŒ
 ();
 
-77 
+75 
 	`Ïpiûoi
 ();
 
-79 
+77 
 T_IRQ0
  + 
 IRQ_IDE
 +1:
 
-82 
+80 
 T_IRQ0
  + 
 IRQ_KBD
 :
 
-83 
+81 
 	`kbdšŒ
 ();
 
-84 
+82 
 	`Ïpiûoi
 ();
 
-86 
+84 
 T_IRQ0
  + 
 IRQ_COM1
 :
 
-87 
+85 
 	`u¬tšŒ
 ();
 
-88 
+86 
 	`Ïpiûoi
 ();
 
-90 
+88 
 T_IRQ0
  + 7:
 
-91 
+89 
 T_IRQ0
  + 
 IRQ_SPURIOUS
 :
 
-92 
+90 
 	`ýrštf
 ("cpu%d: spurious interrupt‡t %x:%x\n",
 
-93 
+91 
 	`ýuid
 (), 
 tf
@@ -29152,11 +29152,11 @@ cs
 e
 );
 
-94 
+92 
 	`Ïpiûoi
 ();
 
-99 if(
+97 if(
 	`my´oc
 (è=ð0 || (
 tf
@@ -29164,11 +29164,11 @@ tf
 cs
 &3) == 0){
 
-101 
+99 
 	`ýrštf
 ("unexpectedrap %d from cpu %dƒip %x (cr2=0x%x)\n",
 
-102 
+100 
 tf
 ->
 Œ­no
@@ -29180,15 +29180,15 @@ e
 	`rü2
 ());
 
-103 
+101 
 	`·nic
 ("trap");
 
-106 
+104 
 	`ýrštf
 ("pid %d %s:rap %dƒrr %d on cpu %d "
 
-108 
+106 
 	`my´oc
 ()->
 pid
@@ -29200,7 +29200,7 @@ tf
 Œ­no
 ,
 
-109 
+107 
 tf
 ->
 ”r
@@ -29212,13 +29212,13 @@ e
 	`rü2
 ());
 
-110 
+108 
 	`my´oc
 ()->
 kžËd
  = 1;
 
-116 if(
+114 if(
 	`my´oc
 (è&& my´oc()->
 kžËd
@@ -29230,11 +29230,11 @@ cs
 DPL_USER
 )
 
-117 
+115 
 	`ex™
 ();
 
-121 if(
+119 if(
 	`my´oc
 (è&& my´oc()->
 ¡©e
@@ -29242,7 +29242,7 @@ DPL_USER
 RUNNING
  &&
 
-122 
+120 
 tf
 ->
 Œ­no
@@ -29252,11 +29252,11 @@ T_IRQ0
 IRQ_TIMER
 )
 
-123 
+121 
 	`y›ld
 ();
 
-126 if(
+124 if(
 	`my´oc
 (è&& my´oc()->
 kžËd
@@ -29268,11 +29268,11 @@ cs
 DPL_USER
 )
 
-127 
+125 
 	`ex™
 ();
 
-128 
+126 
 	}
 }
 

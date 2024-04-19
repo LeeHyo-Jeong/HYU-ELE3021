@@ -59,13 +59,11 @@ trap(struct trapframe *tf)
      break;
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
-     //  cprintf("ticks = %d, pid = %d, name = \"test_printf\"", ticks, myproc()->pid);
       acquire(&tickslock);
       ticks++;
 	if(isMoQ == 0 && ticks >= 100){
 		priority_boosting();
 		ticks = 0;
-		//cprintf("Priority Boosting done\n");
 	}
       wakeup(&ticks);
       release(&tickslock);
