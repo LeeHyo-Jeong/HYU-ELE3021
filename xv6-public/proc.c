@@ -564,7 +564,7 @@ void enqueue(struct proc* p, int level){
 	p->queuelevel = level;
 	p->proctick = 0;
 
-
+	
 	p->priority = 0;
 }
 
@@ -722,7 +722,7 @@ void priority_boosting(void){
 
 int setpriority(int pid, int priority){
 	if(0 > priority || 10 < priority) return -2;
-
+	
 	acquire(&ptable.lock);
 	struct proc* find;
 	for(find = ptable.proc; find < &ptable.proc[NPROC] ; find++){
@@ -857,6 +857,7 @@ void scheduler(void){
                         	        // if the process end up its job during time quantum
                         	        if(p->state == ZOMBIE){
                         	                dequeue(p, &mlfq[level]);
+						continue;
                         	        }
 
 					// to avoid moving SLEEPING process, check if the process if RUNNABLE
@@ -884,11 +885,13 @@ void scheduler(void){
 
 			// L3
 			if(mlfq[3].front != 0 && mlfq[1].front == 0 && mlfq[2].front == 0){
+				
 				struct proc* max = mlfq[3].front;
 				struct proc* find = 0;
 				
 				int max_priority = max->priority;
-
+	
+				acquire(&mlfq[3].lock);
 				// find a process that has maximum priority in L3
 				for(find = mlfq[3].front ; find != 0 ; find = find->next){
 					if(find->state != RUNNABLE) continue;
@@ -898,10 +901,10 @@ void scheduler(void){
 					}
 				}		
 			
-				if(max == 0){
-					release(&ptable.lock);
-					continue;			
-				}
+				release(&mlfq[3].lock);
+
+				if(max == 0) continue;			
+				
 
 				// run the process
                         	c->proc = max;
@@ -976,19 +979,4 @@ scheduler(void)
 }
 #endif
 
-// this function is for debugging
-void proc_print(){
-        struct proc* p;
-        for(int level = 0 ; level < 4 ; level++){
-                p = mlfq[level].front;
-                cprintf("[ L%d ] global tick: %d\n", level, ticks);
-                if(p == 0) cprintf(" empty queue\n");
-                while(p != 0){
-                        cprintf(" %d | ", p->pid);
-                        if(p->next == p) return;
-                        p = p->next;
-                }
-        cprintf("\n");
-        }
-}
 

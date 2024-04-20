@@ -1,4 +1,4 @@
-cscope 15 $HOME/xv6-public               0000406062
+cscope 15 $HOME/xv6-public               0000406066
 	@asm.h
 
 5 
@@ -21679,7 +21679,7 @@ mlfqlock
 }
 
 793 #ifdeà
-MLFQ
+MLFQ_MOQ
 
 
 794 
