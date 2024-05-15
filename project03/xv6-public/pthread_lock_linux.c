@@ -3,8 +3,8 @@
 
 int shared_resource = 0;
 
-#define NUM_ITERS 10
-#define NUM_THREADS 10000
+#define NUM_ITERS 100
+#define NUM_THREADS 1000
 
 void lock();
 void unlock();
@@ -18,11 +18,13 @@ typedef struct{
 SpinLock s;
 
 // Test method for lock
-int test(int val){
-	int res = 0;
-	for(int i = 0 ; i < 10 ; i++)
-		res += i;
-	return val + 1;
+int test(int n){
+	int cnt = 0;
+	
+	for(int i = 0 ; i < 1000 ; i++)
+		cnt += i;
+	
+	return n + 1;
 }
 
 void lock(SpinLock *s){
