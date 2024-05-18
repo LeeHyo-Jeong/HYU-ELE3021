@@ -258,6 +258,7 @@ exit(void)
   acquire(&ptable.lock);
   for(p = ptable.proc ; p < &ptable.proc[NPROC] ; p++){
     if(p->pid == curproc->pid && p->tid != curproc->tid){
+      kfree(p->kstack);
       p->kstack = 0;
       p->pid = 0;
       p->tid = 0;

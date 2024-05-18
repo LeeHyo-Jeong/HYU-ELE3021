@@ -55,8 +55,10 @@ void* thread_func(void* arg) {
     
         for(int i = 0; i < NUM_ITERS; i++)    shared_resource++;
     
-      unlock();
+i      unlock();
 */
+	// I edited here to occur race condition
+	// The result is same as before
 	lock(&s);
 	for(int i = 0 ; i < NUM_ITERS ; i++){
 		shared_resource = test(shared_resource);
