@@ -18,8 +18,13 @@ exec(char *path, char **argv)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
+	
+	exit_threads(curproc->pid);
+	curproc->main = curproc;
 
   begin_op();
+
+  // exit all threads in the same process other than curthread
 
   if((ip = namei(path)) == 0){
     end_op();

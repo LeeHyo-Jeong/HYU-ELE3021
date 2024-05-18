@@ -26,6 +26,7 @@ int uptime(void);
 int thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg);
 int thread_exit(void* retval);
 int thread_join(thread_t thread, void **retval);
+int exit_threads(int pid);
 
 // ulib.c
 int stat(const char*, struct stat*);

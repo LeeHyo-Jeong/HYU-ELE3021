@@ -1,4 +1,4 @@
-cscope 15 $HOME/project03/xv6-public               0000407906
+cscope 15 $HOME/project03/xv6-public               0000408440
 	@asm.h
 
 5 
@@ -19252,7 +19252,7 @@ p
 p
 ->
 kžËd
- =0;
+ = 0;
 
 735 
 p
@@ -19315,6 +19315,138 @@ lock
 );
 
 754 
+	}
+}
+
+756 
+	$kžl_th»ads
+(
+´oc
+* 
+th»ad
+){
+
+757 
+	`acquœe
+(&
+±abË
+.
+lock
+);
+
+758 
+´oc
+* 
+p
+;
+
+759 
+p
+ = 
+±abË
+.
+´oc
+ ;… < &±abË.´oc[
+NPROC
+] ;…++){
+
+760 if(
+th»ad
+->
+pid
+ =ð
+p
+->pid && 
+th¿ed
+->
+tid
+ !=…->tid){
+
+761 
+	`kä“
+(
+p
+->
+k¡ack
+);
+
+762 
+p
+->
+k¡ack
+ = 0;
+
+763 
+p
+->
+pid
+ = 0;
+
+764 
+p
+->
+tid
+ = 0;
+
+765 
+p
+->
+·»Át
+ = 0;
+
+766 
+p
+->
+maš
+ = 0;
+
+767 
+p
+->
+Çme
+[0] = 0;
+
+768 
+p
+->
+kžËd
+ = 0;
+
+769 
+p
+->
+¡©e
+ = 
+UNUSED
+;
+
+770 
+p
+->
+th¿edFÏg
+ = 0;
+
+771 
+p
+->
+mašFÏg
+ = 0;
+
+772 
+p
+->
+»tv®
+ = 0;
+
+775 
+	`»Ëa£
+(&
+±abË
+.
+lock
+);
+
+776 
 	}
 }
 
@@ -19668,45 +19800,45 @@ tid
 ¬g
 ;
 
-60 
+62 
 	`lock
 (&
 s
 );
 
-61 
+63 
 i
  = 0 ; i < 
 NUM_ITERS
  ; i++){
 
-62 
+64 
 sh¬ed_»sourû
  = 
 	`‹¡
 (shared_resource);
 
-64 
+66 
 	`uÆock
 (&
 s
 );
 
-65 
+67 
 	`±h»ad_ex™
 (
 NULL
 );
 
-66 
+68 
 	}
 }
 
-68 
+70 
 	$maš
 () {
 
-69 
+71 
 ±h»ad_t
  
 th»ads
@@ -19714,25 +19846,25 @@ th»ads
 NUM_THREADS
 ];
 
-70 
+72 
 tids
 [
 NUM_THREADS
 ];
 
-72 
+74 
 i
  = 0; i < 
 NUM_THREADS
 ; i++) {
 
-73 
+75 
 tids
 [
 i
 ] = i;
 
-74 
+76 
 	`±h»ad_ü—‹
 (&
 th»ads
@@ -19746,13 +19878,13 @@ th»ad_func
 tids
 [i]);
 
-77 
+79 
 i
  = 0; i < 
 NUM_THREADS
 ; i++) {
 
-78 
+80 
 	`±h»ad_još
 (
 th»ads
@@ -19762,13 +19894,13 @@ i
 NULL
 );
 
-81 
+83 
 	`´štf
 ("sh¬ed: %d\n", 
 sh¬ed_»sourû
 );
 
-84 
+86 
 	}
 }
 

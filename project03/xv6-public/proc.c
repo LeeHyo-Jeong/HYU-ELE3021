@@ -731,7 +731,7 @@ int thread_join(thread_t thread, void **retval){
 				p->parent = 0;
 				p->main = 0;
 				p->name[0] = 0;
-				p->killed =0;
+				p->killed = 0;
 				p->state = UNUSED;
 				p->threadFlag = 0;
 				p->mainFlag = 0;
@@ -753,3 +753,27 @@ int thread_join(thread_t thread, void **retval){
 	return -1;
 }
 
+void exit_threads(int pid){
+	struct proc* p;
+	struct proc* curthread = myproc();
+
+	acquire(&ptable.lock);
+	
+	for(p = ptable.proc ; p < &ptable.proc[NPROC] ; p++){
+		if(p->pid == curthread->pid && curthread->tid != p->tid){
+			kfree(p->kstack);
+			p->kstack = 0;
+			p->pid = 0;
+			p->tid = 0;
+			p->parent = 0;
+			p->main = 0;
+			p->name[0] = 0;
+			p->killed = 0;
+			p->state = UNUSED;
+			p->threadFlag = 0;
+			p->mainFlag = 0;
+			p->retval = 0;
+		}
+	}
+	release(&ptable.lock);
+}

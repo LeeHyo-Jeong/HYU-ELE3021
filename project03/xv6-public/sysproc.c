@@ -127,3 +127,11 @@ int sys_thread_join(void){
 	return thread_join(thread, retval);
 }
 
+int sys_exit_threads(void){
+	int pid;
+	if(argint(0, &pid) < 0){
+		return -1;
+	}
+	exit_threads(pid);
+	return 0;
+}
