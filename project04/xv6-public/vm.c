@@ -318,7 +318,6 @@ copyuvm(pde_t *pgdir, uint sz)
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags;
-//  char *mem;
 
   if((d = setupkvm()) == 0)
     return 0;
@@ -327,24 +326,13 @@ copyuvm(pde_t *pgdir, uint sz)
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
-//    *pte &= (~PTE_W);
     pa = PTE_ADDR(*pte);
     *pte &= (~PTE_W);
     flags = PTE_FLAGS(*pte);
 
-    incr_refc(pa);
     // share pages, do not copy
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) goto bad;
-
-/*
-    if((mem = kalloc()) == 0)
-      goto bad;
-    memmove(mem, (char*)P2V(pa), PGSIZE);
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
-      kfree(mem);
-      goto bad;
-    }
-*/
+    incr_refc(pa);
   }
 
   lcr3(V2P(pgdir));
@@ -397,7 +385,6 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 }
 
 void CoW_handler(){
-
         // virtual address where page fault occured
         uint va = rcr2();
         if(va < 0) return;
@@ -422,16 +409,13 @@ void CoW_handler(){
 
                 // copy page
                 memmove(mem, (char *)P2V(pa), PGSIZE);
-                *pte = V2P(mem);
-                *pte |= PTE_P;  // page exists in memory
-                *pte |= PTE_U;  // user can access this page
-                *pte |= PTE_W;  // this page is writable
+                *pte = V2P(mem) | PTE_U | PTE_W | PTE_P;
 
                 // decrease reference count 1 to this page
                 decr_refc(pa);
         }
         // if reference count equals to 1, write on that page
-        else if(ref == 1){
+        else{
                 *pte |= PTE_W;
         }
 
@@ -448,7 +432,13 @@ int countpp(){
                 if(pgdir[i] & PTE_P){
                         pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(pgdir[i]));
                         for(int j = 0 ; j < NPTENTRIES ; j++){
-                                if(pgtab[j] & PTE_P) ref++;
+                                if(pgtab[j] & PTE_P){
+					// To count only user space addresses,
+					// check if the virtual address is less than KERNBASE
+					uint va = (i << PDXSHIFT) | (j << PTXSHIFT);
+					if(va < KERNBASE)
+						ref++;
+				}
                         }
                 }
         }
@@ -463,18 +453,21 @@ int countptp(){
 
         for(int i = 0 ; i < NPDENTRIES ; i++){
                 if(pgdir[i] & PTE_P){
-                        pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(pgdir[i]));
+                       // pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(pgdir[i]));
                         ref++;
-                        for(int j = 0 ; j < NPTENTRIES; j++){
-                                if(pgtab[j] & PTE_P) ref++;
-                        }
+                        //for(int j = 0 ; j < NPTENTRIES; j++){
+                        //        if(pgtab[j] & PTE_P) ref++;
+                        //}
                 }
         }
-        return ref;
+        return ++ref;
 }
 
+
 int countvp(){
-        return countpp();
+	struct proc* p = myproc();
+	uint sz = p->sz;
+	return (sz + PGSIZE - 1) / PGSIZE;
 }
 
 

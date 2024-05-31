@@ -112,6 +112,8 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  p->vp = 0;
+
   return p;
 }
 
@@ -532,3 +534,4 @@ procdump(void)
     cprintf("\n");
   }
 }
+

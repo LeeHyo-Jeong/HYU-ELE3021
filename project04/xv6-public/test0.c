@@ -19,7 +19,6 @@ main(int argc, char* argv[])
   int numvpa = countvp();
   int numppa = countpp();
   int numptpa = countptp();
-  
   printf(1, "ptp: %d %d\n", numptp, numptpa);
 
   if((numvp == numpp) && (numvpa == numppa) && (numfp - numfpa == 1))
@@ -30,7 +29,3 @@ main(int argc, char* argv[])
   exit();
 }
 
-/*
-int main(){
-printf(1, "hi\n");
-}*/

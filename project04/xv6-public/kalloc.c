@@ -51,8 +51,10 @@ freerange(void *vstart, void *vend)
 {
   char *p;
   p = (char*)PGROUNDUP((uint)vstart);
-  for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
+  for(; p + PGSIZE <= (char*)vend; p += PGSIZE){
+    pageref[V2P(p) >> PGSHIFT] = 0;
     kfree(p);
+  }
 }
 //PAGEBREAK: 21
 // Free the page of physical memory pointed at by v,
@@ -62,23 +64,6 @@ freerange(void *vstart, void *vend)
 void
 kfree(char *v)
 {
-/*
-  struct run *r;
-
-  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
-    panic("kfree");
-
-  // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
-
-  if(kmem.use_lock)
-    acquire(&kmem.lock);
-  r = (struct run*)v;
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  if(kmem.use_lock)
-    release(&kmem.lock);
-*/
   struct run *r;
 
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
@@ -111,15 +96,6 @@ kalloc(void)
 {
 
   struct run *r;
-/*
-  if(kmem.use_lock)
-    acquire(&kmem.lock);
-  r = kmem.freelist;
-  if(r)
-    kmem.freelist = r->next;
-  if(kmem.use_lock)
-    release(&kmem.lock);
-*/
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freelist;
