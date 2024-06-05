@@ -453,11 +453,7 @@ int countptp(){
 
         for(int i = 0 ; i < NPDENTRIES ; i++){
                 if(pgdir[i] & PTE_P){
-                       // pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(pgdir[i]));
                         ref++;
-                        //for(int j = 0 ; j < NPTENTRIES; j++){
-                        //        if(pgtab[j] & PTE_P) ref++;
-                        //}
                 }
         }
         return ++ref;
